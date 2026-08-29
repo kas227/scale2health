@@ -4,8 +4,8 @@ import XCTest
 
 final class PackageSmokeTests: XCTestCase {
     func testCoreChecksAreRepresentedByTheSwiftPMTarget() {
-        XCTAssertEqual(BS444Protocol.weightFrameLength, 9)
-        XCTAssertEqual(BS444Protocol.featureFrameLength, 16)
+        XCTAssertEqual(BS444Protocol.weightFrameLength, 19)
+        XCTAssertEqual(BS444Protocol.featureFrameLength, 19)
     }
 }
 #endif

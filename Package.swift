@@ -17,6 +17,7 @@ let package = Package(
             exclude: [
                 "App",
                 "UI",
+                "Assets.xcassets",
                 "Info.plist",
                 "Scale2Health.entitlements",
                 "Managers/BluetoothManager.swift",

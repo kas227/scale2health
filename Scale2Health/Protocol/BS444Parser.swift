@@ -2,23 +2,29 @@ import Foundation
 
 public enum BS444ParseError: Error, Equatable, CustomStringConvertible {
     case insufficientData(expected: Int, actual: Int)
+    case unsupportedWeightUnit(UInt8)
 
     public var description: String {
         switch self {
         case let .insufficientData(expected, actual):
             return "BS444 packet is too short (expected at least \(expected) bytes, got \(actual))"
+        case let .unsupportedWeightUnit(value):
+            return "BS444 packet uses unsupported weight unit flag \(value)"
         }
     }
 }
 
 public struct BS444WeightPacket: Equatable, Sendable {
     public let weightKg: Double
+    public let sourceUnit: BS444WeightUnit
+    public let userID: UInt8?
     public let timestamp: Date
     public let rawTimestamp: UInt32
     public let epochMode: BS444EpochMode
 }
 
 public struct BS444FeaturePacket: Equatable, Sendable {
+    public let userID: UInt8?
     public let bodyFatPercent: Double?
     public let bodyWaterPercent: Double?
     public let musclePercent: Double?
@@ -112,11 +118,17 @@ public enum BS444Parser {
             )
         }
 
+        let rawUnit = (data[0] >> 5) & 0x03
+        guard let sourceUnit = BS444WeightUnit(rawValue: rawUnit) else {
+            throw BS444ParseError.unsupportedWeightUnit(rawUnit)
+        }
         let rawWeight = littleEndianUInt16(data, offset: 1)
         let rawTimestamp = littleEndianUInt32(data, offset: 5)
         let decodedTime = timestampDecoder.decode(raw: rawTimestamp, now: now)
         return BS444WeightPacket(
-            weightKg: Double(rawWeight) / 100.0,
+            weightKg: weightInKilograms(rawWeight, unit: sourceUnit),
+            sourceUnit: sourceUnit,
+            userID: decodeUserID(data[13]),
             timestamp: decodedTime.date,
             rawTimestamp: rawTimestamp,
             epochMode: decodedTime.mode
@@ -132,11 +144,27 @@ public enum BS444Parser {
         }
 
         return BS444FeaturePacket(
+            userID: decodeUserID(data[5]),
             bodyFatPercent: positiveOrNil(decode12BitTenth(data, offset: 8)),
             bodyWaterPercent: positiveOrNil(decode12BitTenth(data, offset: 10)),
             musclePercent: positiveOrNil(decode12BitTenth(data, offset: 12)),
             boneMassKg: positiveOrNil(decode12BitTenth(data, offset: 14))
         )
+    }
+
+    private static func weightInKilograms(_ rawWeight: UInt16, unit: BS444WeightUnit) -> Double {
+        let scalar = Double(rawWeight) / 100.0
+        switch unit {
+        case .kilograms:
+            return scalar
+        case .pounds, .stonesAndPounds:
+            // Stone mode still carries one imperial scalar, so it is normalized as total pounds.
+            return scalar * 0.453_592_37
+        }
+    }
+
+    private static func decodeUserID(_ rawValue: UInt8) -> UInt8? {
+        (1...8).contains(rawValue) ? rawValue : nil
     }
 
     private static func positiveOrNil(_ value: Double) -> Double? {
@@ -175,8 +203,8 @@ public struct BS444Session: Sendable {
     private var weightBuffer = BS444FrameBuffer(frameLength: BS444Protocol.weightFrameLength)
     private var featureBuffer = BS444FrameBuffer(frameLength: BS444Protocol.featureFrameLength)
     private var timestampDecoder: BS444TimestampDecoder
-    private var pendingWeights: [PendingWeight] = []
-    private var pendingFeatures: [PendingFeature] = []
+    private var pendingWeight: PendingWeight?
+    private var pendingFeature: PendingFeature?
     private let pairingWindow: TimeInterval
 
     public init(epochMode: BS444EpochMode? = nil, pairingWindow: TimeInterval = 10) {
@@ -188,57 +216,74 @@ public struct BS444Session: Sendable {
 
     public mutating func receiveWeight(_ fragment: Data, now: Date) throws -> [BodyMeasurement] {
         expireStaleData(at: now)
+        var measurements: [BodyMeasurement] = []
         for frame in weightBuffer.append(fragment) {
             let packet = try BS444Parser.parseWeight(
                 frame,
                 now: now,
                 timestampDecoder: &timestampDecoder
             )
-            pendingWeights.append(PendingWeight(packet: packet, receivedAt: now))
+            pendingWeight = PendingWeight(packet: packet, receivedAt: now)
+            if let measurement = makeMeasurementIfReady() {
+                measurements.append(measurement)
+            }
         }
-        return drainReadyMeasurements()
+        return measurements
     }
 
     public mutating func receiveFeature(_ fragment: Data, now: Date) throws -> [BodyMeasurement] {
         expireStaleData(at: now)
+        var measurements: [BodyMeasurement] = []
         for frame in featureBuffer.append(fragment) {
             let packet = try BS444Parser.parseFeature(frame)
-            pendingFeatures.append(PendingFeature(packet: packet, receivedAt: now))
+            pendingFeature = PendingFeature(packet: packet, receivedAt: now)
+            if let measurement = makeMeasurementIfReady() {
+                measurements.append(measurement)
+            }
         }
-        return drainReadyMeasurements()
+        return measurements
     }
 
     public mutating func reset() {
         weightBuffer.reset()
         featureBuffer.reset()
-        pendingWeights.removeAll(keepingCapacity: true)
-        pendingFeatures.removeAll(keepingCapacity: true)
+        pendingWeight = nil
+        pendingFeature = nil
     }
 
     private mutating func expireStaleData(at date: Date) {
-        pendingWeights.removeAll {
-            date.timeIntervalSince($0.receivedAt) > pairingWindow
+        if let pendingWeight, date.timeIntervalSince(pendingWeight.receivedAt) > pairingWindow {
+            self.pendingWeight = nil
         }
-        pendingFeatures.removeAll {
-            date.timeIntervalSince($0.receivedAt) > pairingWindow
+        if let pendingFeature, date.timeIntervalSince(pendingFeature.receivedAt) > pairingWindow {
+            self.pendingFeature = nil
         }
     }
 
-    private mutating func drainReadyMeasurements() -> [BodyMeasurement] {
-        var measurements: [BodyMeasurement] = []
-        while !pendingWeights.isEmpty && !pendingFeatures.isEmpty {
-            let weight = pendingWeights.removeFirst()
-            let feature = pendingFeatures.removeFirst()
-            guard weight.packet.weightKg > 0 else { continue }
-            measurements.append(BodyMeasurement(
-                timestamp: weight.packet.timestamp,
-                weightKg: weight.packet.weightKg,
-                bodyFatPercent: feature.packet.bodyFatPercent,
-                bodyWaterPercent: feature.packet.bodyWaterPercent,
-                musclePercent: feature.packet.musclePercent,
-                boneMassKg: feature.packet.boneMassKg
-            ))
+    private mutating func makeMeasurementIfReady() -> BodyMeasurement? {
+        guard let pendingWeight, let pendingFeature else { return nil }
+        guard pendingWeight.packet.weightKg > 0 else {
+            self.pendingWeight = nil
+            return nil
         }
-        return measurements
+        guard pendingWeight.packet.userID == pendingFeature.packet.userID else {
+            // Never combine body composition from one scale user with another user's weight.
+            self.pendingWeight = nil
+            self.pendingFeature = nil
+            return nil
+        }
+        let measurement = BodyMeasurement(
+            timestamp: pendingWeight.packet.timestamp,
+            weightKg: pendingWeight.packet.weightKg,
+            scaleUserID: pendingWeight.packet.userID,
+            sourceWeightUnit: pendingWeight.packet.sourceUnit,
+            bodyFatPercent: pendingFeature.packet.bodyFatPercent,
+            bodyWaterPercent: pendingFeature.packet.bodyWaterPercent,
+            musclePercent: pendingFeature.packet.musclePercent,
+            boneMassKg: pendingFeature.packet.boneMassKg
+        )
+        self.pendingWeight = nil
+        self.pendingFeature = nil
+        return measurement
     }
 }

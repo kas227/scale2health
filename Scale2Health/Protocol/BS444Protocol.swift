@@ -5,6 +5,21 @@ public enum BS444EpochMode: String, Codable, Equatable, Sendable {
     case from2010
 }
 
+/// Unit selected on the scale and encoded in bits 5...6 of the weight flags byte.
+public enum BS444WeightUnit: UInt8, Codable, Equatable, Sendable {
+    case kilograms = 0
+    case pounds = 1
+    case stonesAndPounds = 2
+
+    public var label: String {
+        switch self {
+        case .kilograms: return "kg"
+        case .pounds: return "lb"
+        case .stonesAndPounds: return "st:lb"
+        }
+    }
+}
+
 public struct BS444DeviceSupport: Equatable, Sendable {
     public enum Variant: String, Equatable, Sendable {
         case bs430 = "Medisana BS430"
@@ -35,8 +50,8 @@ public enum BS444Protocol {
     public static let commandCharacteristicUUID = UUID(uuidString: "00008A81-0000-1000-8000-00805F9B34FB")!
     public static let optionalCharacteristicUUID = UUID(uuidString: "00008A82-0000-1000-8000-00805F9B34FB")!
 
-    public static let weightFrameLength = 9
-    public static let featureFrameLength = 16
+    public static let weightFrameLength = 19
+    public static let featureFrameLength = 19
     public static let scaleEpochOffset: UInt64 = 1_262_304_000
 
     /// The scale's clock command is 0x02 followed by a little-endian UInt32 timestamp.

@@ -4,6 +4,10 @@ import Foundation
 public struct BodyMeasurement: Codable, Equatable, Sendable {
     public let timestamp: Date
     public let weightKg: Double
+    /// User slot selected by the scale (1...8), or nil for an unassigned measurement.
+    public let scaleUserID: UInt8?
+    /// Unit encoded by the scale; weightKg is always normalized to kilograms.
+    public let sourceWeightUnit: BS444WeightUnit
     public let bodyFatPercent: Double?
     public let bodyWaterPercent: Double?
     /// The BS444 feature packet reports muscle as a percentage, not a mass.
@@ -13,6 +17,8 @@ public struct BodyMeasurement: Codable, Equatable, Sendable {
     public init(
         timestamp: Date,
         weightKg: Double,
+        scaleUserID: UInt8? = nil,
+        sourceWeightUnit: BS444WeightUnit = .kilograms,
         bodyFatPercent: Double? = nil,
         bodyWaterPercent: Double? = nil,
         musclePercent: Double? = nil,
@@ -20,6 +26,8 @@ public struct BodyMeasurement: Codable, Equatable, Sendable {
     ) {
         self.timestamp = timestamp
         self.weightKg = weightKg
+        self.scaleUserID = scaleUserID
+        self.sourceWeightUnit = sourceWeightUnit
         self.bodyFatPercent = bodyFatPercent
         self.bodyWaterPercent = bodyWaterPercent
         self.musclePercent = musclePercent

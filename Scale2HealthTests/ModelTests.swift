@@ -11,7 +11,8 @@ final class ModelTests: XCTestCase {
             identifier: "ABC",
             name: "013197123456",
             lastSeen: Date(timeIntervalSince1970: 1_700_000_000),
-            epochMode: .from2010
+            epochMode: .from2010,
+            userIDFilter: 3
         )
 
         store.save(device)
@@ -37,6 +38,42 @@ final class ModelTests: XCTestCase {
         XCTAssertFalse(deduplicator.contains(measurement))
         deduplicator.remember(measurement)
         XCTAssertTrue(deduplicator.contains(measurement))
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testDeduplicatorDistinguishesScaleUsers() {
+        let suiteName = "Scale2HealthTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let deduplicator = MeasurementDeduplicator(defaults: defaults)
+        let timestamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let userOne = BodyMeasurement(timestamp: timestamp, weightKg: 72.34, scaleUserID: 1)
+        let userTwo = BodyMeasurement(timestamp: timestamp, weightKg: 72.34, scaleUserID: 2)
+
+        deduplicator.remember(userOne)
+        XCTAssertTrue(deduplicator.contains(userOne))
+        XCTAssertFalse(deduplicator.contains(userTwo))
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    func testDeduplicatorRecognizesAndMigratesLegacyFingerprint() {
+        let suiteName = "Scale2HealthTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let key = "fingerprints"
+        let deduplicator = MeasurementDeduplicator(defaults: defaults, key: key)
+        let measurement = BodyMeasurement(
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000),
+            weightKg: 72.34,
+            scaleUserID: 1,
+            bodyFatPercent: 23.4,
+            bodyWaterPercent: 55.6,
+            musclePercent: 40.2,
+            boneMassKg: 3.1
+        )
+        defaults.set(["1700000000|72.34|23.4|55.6|40.2|3.1"], forKey: key)
+
+        XCTAssertTrue(deduplicator.contains(measurement))
+        deduplicator.remember(measurement)
+        XCTAssertEqual(defaults.stringArray(forKey: key), [deduplicator.fingerprint(for: measurement)])
         defaults.removePersistentDomain(forName: suiteName)
     }
 

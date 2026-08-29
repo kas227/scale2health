@@ -4,6 +4,9 @@ import HealthKit
 
 @MainActor
 final class HealthKitManager: ObservableObject {
+    /// Emergency kill switch for HealthKit writes if packet validation regresses.
+    static let writesEnabled = true
+
     enum AuthorizationState: Equatable {
         case unavailable
         case notDetermined
@@ -57,6 +60,27 @@ final class HealthKitManager: ObservableObject {
         authorizationState = HKHealthStore.isHealthDataAvailable() ? .notDetermined : .unavailable
     }
 
+    func refreshAuthorization() {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            authorizationState = .unavailable
+            return
+        }
+        guard let bodyMassType else {
+            authorizationState = .denied
+            return
+        }
+        switch healthStore.authorizationStatus(for: bodyMassType) {
+        case .sharingAuthorized:
+            authorizationState = .authorized
+        case .sharingDenied:
+            authorizationState = .denied
+        case .notDetermined:
+            authorizationState = .notDetermined
+        @unknown default:
+            authorizationState = .notDetermined
+        }
+    }
+
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else {
             authorizationState = .unavailable
@@ -82,6 +106,7 @@ final class HealthKitManager: ObservableObject {
     }
 
     func save(_ measurement: BodyMeasurement) async throws -> Bool {
+        guard Self.writesEnabled else { return false }
         guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.unavailable }
         let fingerprint = deduplicator.fingerprint(for: measurement)
         guard !deduplicator.contains(measurement), !inFlightFingerprints.contains(fingerprint) else {
@@ -91,7 +116,8 @@ final class HealthKitManager: ObservableObject {
         defer { inFlightFingerprints.remove(fingerprint) }
 
         var samples: [HKObject] = []
-        if let bodyMassType {
+        if let bodyMassType,
+           healthStore.authorizationStatus(for: bodyMassType) == .sharingAuthorized {
             let quantity = HKQuantity(
                 unit: HKUnit.gramUnit(with: .kilo),
                 doubleValue: measurement.weightKg
@@ -103,7 +129,9 @@ final class HealthKitManager: ObservableObject {
                 end: measurement.timestamp
             ))
         }
-        if let bodyFatType, let bodyFatPercent = measurement.bodyFatPercent {
+        if let bodyFatType,
+           healthStore.authorizationStatus(for: bodyFatType) == .sharingAuthorized,
+           let bodyFatPercent = measurement.bodyFatPercent {
             let quantity = HKQuantity(
                 unit: HKUnit.percent(),
                 doubleValue: bodyFatPercent / 100.0

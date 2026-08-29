@@ -28,6 +28,16 @@ struct ContentView: View {
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
+                        Picker("Scale user", selection: userFilterBinding) {
+                            Text("Any user").tag(nil as UInt8?)
+                            ForEach(1...8, id: \.self) { userID in
+                                Text("User \(userID)").tag(UInt8(userID) as UInt8?)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        Text("User slots are configured on the scale. The app can filter received measurements but cannot create or edit scale users.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                         Button("Disconnect", role: .destructive) {
                             model.bluetooth.disconnect()
                         }
@@ -61,11 +71,18 @@ struct ContentView: View {
                 }
 
                 Section("Apple Health") {
-                    Label(model.healthKit.authorizationState.title, systemImage: "heart.text.square")
-                    if model.healthKit.authorizationState != .authorized {
-                        Button("Allow Health access") {
-                            model.requestHealthKitAuthorization()
+                    if HealthKitManager.writesEnabled {
+                        Label(model.healthKit.authorizationState.title, systemImage: "heart.text.square")
+                        if model.healthKit.authorizationState != .authorized {
+                            Button("Allow Health access") {
+                                model.requestHealthKitAuthorization()
+                            }
                         }
+                    } else {
+                        Label("HealthKit writes paused", systemImage: "pause.circle")
+                        Text("No measurements will be written until the BS444 packet mapping is verified.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     if let message = model.healthKitMessage {
                         Text(message)
@@ -79,6 +96,12 @@ struct ContentView: View {
                         Text("No BLE events yet.")
                             .foregroundStyle(.secondary)
                     } else {
+                        ShareLink(item: rawBLELogText) {
+                            Label("Share or copy BLE log", systemImage: "square.and.arrow.up")
+                        }
+                        Text("Use Copy in the share sheet to paste the packet log for verification.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                         ForEach(Array(model.bluetooth.logs.enumerated()), id: \.offset) { _, line in
                             Text(line)
                                 .font(.caption2.monospaced())
@@ -92,6 +115,17 @@ struct ContentView: View {
         .task {
             model.start()
         }
+    }
+
+    private var userFilterBinding: Binding<UInt8?> {
+        Binding(
+            get: { model.bluetooth.selectedDevice?.userIDFilter },
+            set: { model.bluetooth.setUserIDFilter($0) }
+        )
+    }
+
+    private var rawBLELogText: String {
+        model.bluetooth.logs.joined(separator: "\n")
     }
 
     private var statusIcon: String {
@@ -110,6 +144,17 @@ private struct MeasurementView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             value("Weight", measurement.weightKg, suffix: "kg")
+            HStack {
+                Text("Scale user")
+                Spacer()
+                Text(measurement.scaleUserID.map { "User \($0)" } ?? "Unassigned")
+            }
+            HStack {
+                Text("Scale unit")
+                Spacer()
+                Text(measurement.sourceWeightUnit.label)
+            }
+            .foregroundStyle(.secondary)
             if let bodyFatPercent = measurement.bodyFatPercent {
                 value("Body fat", bodyFatPercent, suffix: "%")
             }

@@ -147,6 +147,25 @@ final class BluetoothManager: NSObject, ObservableObject {
         discoveredDevices = []
     }
 
+    func setUserIDFilter(_ userID: UInt8?) {
+        guard var saved = selectedDevice else { return }
+        let normalized = userID.flatMap { (1...8).contains($0) ? $0 : nil }
+        saved.userIDFilter = normalized
+        selectedDevice = saved
+        if let index = discoveredDevices.firstIndex(where: {
+            $0.identifier.caseInsensitiveCompare(saved.identifier) == .orderedSame
+        }) {
+            discoveredDevices[index].userIDFilter = normalized
+        }
+        store.save(saved)
+        if let latestMeasurement,
+           let normalized,
+           latestMeasurement.scaleUserID != normalized {
+            self.latestMeasurement = nil
+        }
+        appendLog(normalized.map { "Accepting scale user \($0) only" } ?? "Accepting every scale user")
+    }
+
     private func connect(to peripheral: CBPeripheral, device: ScaleDevice) {
         userRequestedDisconnect = false
         stopScanning()
@@ -208,7 +227,6 @@ final class BluetoothManager: NSObject, ObservableObject {
     }
 
     private func handle(_ measurement: BodyMeasurement) {
-        latestMeasurement = measurement
         state = .ready
         if var saved = selectedDevice {
             saved.lastSeen = Date()
@@ -216,7 +234,17 @@ final class BluetoothManager: NSObject, ObservableObject {
             selectedDevice = saved
             store.save(saved)
         }
-        appendLog("Decoded measurement: \(measurement.weightKg) kg at \(measurement.timestamp)")
+
+        if let userIDFilter = selectedDevice?.userIDFilter,
+           measurement.scaleUserID != userIDFilter {
+            let receivedUser = measurement.scaleUserID.map(String.init) ?? "unassigned"
+            appendLog("Ignored measurement for scale user \(receivedUser); filter is user \(userIDFilter)")
+            return
+        }
+
+        latestMeasurement = measurement
+        let user = measurement.scaleUserID.map { "user \($0)" } ?? "unassigned user"
+        appendLog("Decoded measurement: \(measurement.weightKg) kg from \(measurement.sourceWeightUnit.label), \(user), at \(measurement.timestamp)")
         onMeasurement?(measurement)
     }
 
@@ -346,13 +374,15 @@ extension BluetoothManager: CBCentralManagerDelegate {
 
         peripherals[peripheral.identifier] = peripheral
         let saved = store.load()
+        let isSavedDevice = saved?.identifier.caseInsensitiveCompare(peripheral.identifier.uuidString) == .orderedSame
         let device = ScaleDevice(
             identifier: peripheral.identifier.uuidString,
             name: name,
             lastSeen: Date(),
-            epochMode: saved?.identifier.caseInsensitiveCompare(peripheral.identifier.uuidString) == .orderedSame
+            epochMode: isSavedDevice
                 ? saved?.epochMode
-                : BS444Protocol.predictedEpochMode(for: name)
+                : BS444Protocol.predictedEpochMode(for: name),
+            userIDFilter: isSavedDevice ? saved?.userIDFilter : nil
         )
         record(device)
         appendLog("Found \(name) (RSSI \(RSSI), services: \(services.map { $0.uuidString }.joined(separator: ", ")))")

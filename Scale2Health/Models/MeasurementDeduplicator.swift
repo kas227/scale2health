@@ -21,6 +21,7 @@ public final class MeasurementDeduplicator {
         let timestamp = Int64(measurement.timestamp.timeIntervalSince1970.rounded())
         return [
             String(timestamp),
+            measurement.scaleUserID.map { String($0) } ?? "-",
             String(measurement.weightKg),
             optionalPart(measurement.bodyFatPercent),
             optionalPart(measurement.bodyWaterPercent),
@@ -30,18 +31,34 @@ public final class MeasurementDeduplicator {
     }
 
     public func contains(_ measurement: BodyMeasurement) -> Bool {
-        recentFingerprints.contains(fingerprint(for: measurement))
+        let values = recentFingerprints
+        return values.contains(fingerprint(for: measurement))
+            || values.contains(legacyFingerprint(for: measurement))
     }
 
     public func remember(_ measurement: BodyMeasurement) {
         let value = fingerprint(for: measurement)
-        var values = recentFingerprints.filter { $0 != value }
+        let legacyValue = legacyFingerprint(for: measurement)
+        var values = recentFingerprints.filter { $0 != value && $0 != legacyValue }
         values.append(value)
         defaults.set(Array(values.suffix(capacity)), forKey: key)
     }
 
     private var recentFingerprints: [String] {
         defaults.stringArray(forKey: key) ?? []
+    }
+
+    /// Fingerprint format used before scale user IDs were decoded.
+    private func legacyFingerprint(for measurement: BodyMeasurement) -> String {
+        let timestamp = Int64(measurement.timestamp.timeIntervalSince1970.rounded())
+        return [
+            String(timestamp),
+            String(measurement.weightKg),
+            optionalPart(measurement.bodyFatPercent),
+            optionalPart(measurement.bodyWaterPercent),
+            optionalPart(measurement.musclePercent),
+            optionalPart(measurement.boneMassKg)
+        ].joined(separator: "|")
     }
 
     private func optionalPart(_ value: Double?) -> String {

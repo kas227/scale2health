@@ -10,6 +10,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastSavedMeasurement: BodyMeasurement?
     @Published private(set) var healthKitMessage: String?
 
+    private var managerCancellables = Set<AnyCancellable>()
+
     init(
         bluetooth: BluetoothManager? = nil,
         healthKit: HealthKitManager? = nil
@@ -18,6 +20,22 @@ final class AppModel: ObservableObject {
         let resolvedHealthKit = healthKit ?? HealthKitManager()
         self.bluetooth = resolvedBluetooth
         self.healthKit = resolvedHealthKit
+
+        resolvedBluetooth.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.objectWillChange.send()
+                }
+            }
+            .store(in: &managerCancellables)
+        resolvedHealthKit.objectWillChange
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.objectWillChange.send()
+                }
+            }
+            .store(in: &managerCancellables)
+
         resolvedBluetooth.onMeasurement = { [weak self] measurement in
             Task { @MainActor [weak self] in
                 await self?.receive(measurement)
@@ -26,11 +44,22 @@ final class AppModel: ObservableObject {
     }
 
     func start() {
+        healthKit.refreshAuthorization()
         bluetooth.start()
     }
 
     func requestHealthKitAuthorization() {
-        Task { await healthKit.requestAuthorization() }
+        guard HealthKitManager.writesEnabled else {
+            healthKitMessage = "HealthKit writes are paused while BS444 measurements are being verified."
+            return
+        }
+        Task {
+            await healthKit.requestAuthorization()
+            if healthKit.authorizationState == .authorized,
+               let latestMeasurement = bluetooth.latestMeasurement {
+                await receive(latestMeasurement)
+            }
+        }
     }
 
     func clearHealthKitMessage() {
@@ -38,6 +67,14 @@ final class AppModel: ObservableObject {
     }
 
     private func receive(_ measurement: BodyMeasurement) async {
+        guard HealthKitManager.writesEnabled else {
+            healthKitMessage = "HealthKit writes are paused while BS444 measurements are being verified."
+            return
+        }
+        guard healthKit.authorizationState == .authorized else {
+            healthKitMessage = "Allow Health access to save the latest measurement."
+            return
+        }
         do {
             let didSave = try await healthKit.save(measurement)
             lastSavedMeasurement = measurement
