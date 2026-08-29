@@ -57,12 +57,25 @@ check(feature.boneMassKg == 3.1, "bone decoding")
 
 var session = BS444Session(epochMode: .unix)
 let weightFirstPart = try session.receiveWeight(Data(weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000).prefix(4)), now: now)
-check(weightFirstPart == nil, "partial weight buffering")
+check(weightFirstPart.isEmpty, "partial weight buffering")
 let weightSecondPart = try session.receiveWeight(Data(weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000).dropFirst(4)), now: now)
-check(weightSecondPart == nil, "weight waits for feature")
-let measurement = try session.receiveFeature(featurePacket(fat: 234, water: 556, muscle: 402, bone: 31), now: now)
-check(measurement?.weightKg == 72.34, "session aggregation")
-check(measurement?.bodyFatPercent == 23.4, "session body composition")
+check(weightSecondPart.isEmpty, "weight waits for feature")
+let measurements = try session.receiveFeature(featurePacket(fat: 234, water: 556, muscle: 402, bone: 31), now: now)
+check(measurements.count == 1, "session aggregation")
+check(measurements[0].weightKg == 72.34, "session weight")
+check(measurements[0].bodyFatPercent == 23.4, "session body composition")
+
+var multiSession = BS444Session(epochMode: .unix)
+let firstWeight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)
+let secondWeight = weightPacket(weightRaw: 7_235, timestamp: 1_700_000_001)
+let firstFeature = featurePacket(fat: 234, water: 556, muscle: 402, bone: 31)
+let secondFeature = featurePacket(fat: 235, water: 557, muscle: 403, bone: 32)
+let multipleWeightResult = try multiSession.receiveWeight(firstWeight + secondWeight, now: now)
+check(multipleWeightResult.isEmpty, "multiple weights wait for features")
+let multipleMeasurements = try multiSession.receiveFeature(firstFeature + secondFeature, now: now)
+check(multipleMeasurements.count == 2, "multiple complete frames are delivered")
+check(multipleMeasurements[0].weightKg == 72.34, "first repeated measurement")
+check(multipleMeasurements[1].weightKg == 72.35, "second repeated measurement")
 
 var buffer = BS444FrameBuffer(frameLength: 3)
 check(buffer.append(Data([1])).isEmpty, "buffer holds incomplete frame")
@@ -87,18 +100,18 @@ let zeroWeightResult = try zeroSession.receiveWeight(
     weightPacket(weightRaw: 0, timestamp: 1_700_000_000),
     now: now
 )
-check(zeroWeightResult == nil, "zero weight is not published")
+check(zeroWeightResult.isEmpty, "zero weight is not published")
 let zeroFeatureResult = try zeroSession.receiveFeature(
     featurePacket(fat: 234, water: 556, muscle: 402, bone: 31),
     now: now
 )
-check(zeroFeatureResult == nil, "zero weight remains ignored")
+check(zeroFeatureResult.isEmpty, "zero weight remains ignored")
 
 let dedupeDefaults = UserDefaults(suiteName: "Scale2HealthCoreChecks.\(UUID().uuidString)")!
 let deduplicator = MeasurementDeduplicator(defaults: dedupeDefaults)
-check(!deduplicator.contains(measurement!), "new measurement is accepted")
-deduplicator.remember(measurement!)
-check(deduplicator.contains(measurement!), "duplicate measurement is detected")
+check(!deduplicator.contains(measurements[0]), "new measurement is accepted")
+deduplicator.remember(measurements[0])
+check(deduplicator.contains(measurements[0]), "duplicate measurement is detected")
 
 var legacyDecoder = BS444TimestampDecoder(mode: .unix)
 let legacyRaw = UInt32(1_700_000_000 - Int64(BS444Protocol.scaleEpochOffset))

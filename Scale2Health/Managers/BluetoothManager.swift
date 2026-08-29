@@ -372,10 +372,14 @@ extension BluetoothManager: CBCentralManagerDelegate {
         didFailToConnect peripheral: CBPeripheral,
         error: Error?
     ) {
+        let shouldReconnect = !userRequestedDisconnect
+        userRequestedDisconnect = false
         appendLog("Connection failed: \(error?.localizedDescription ?? "unknown error")")
         resetConnection()
         state = .failed(error?.localizedDescription ?? "Connection failed")
-        scheduleReconnect()
+        if shouldReconnect {
+            scheduleReconnect()
+        }
     }
 
     func centralManager(
@@ -502,17 +506,17 @@ extension BluetoothManager: CBPeripheralDelegate {
         guard var activeSession else { return }
 
         do {
-            let measurement: BodyMeasurement?
+            let measurements: [BodyMeasurement]
             switch characteristic.uuid {
             case CBUUID(string: BS444Protocol.weightCharacteristicUUID.uuidString):
-                measurement = try activeSession.receiveWeight(data, now: Date())
+                measurements = try activeSession.receiveWeight(data, now: Date())
             case CBUUID(string: BS444Protocol.featureCharacteristicUUID.uuidString):
-                measurement = try activeSession.receiveFeature(data, now: Date())
+                measurements = try activeSession.receiveFeature(data, now: Date())
             default:
                 return
             }
             self.activeSession = activeSession
-            if let measurement {
+            for measurement in measurements {
                 handle(measurement)
             }
         } catch {

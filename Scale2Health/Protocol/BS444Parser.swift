@@ -175,8 +175,8 @@ public struct BS444Session: Sendable {
     private var weightBuffer = BS444FrameBuffer(frameLength: BS444Protocol.weightFrameLength)
     private var featureBuffer = BS444FrameBuffer(frameLength: BS444Protocol.featureFrameLength)
     private var timestampDecoder: BS444TimestampDecoder
-    private var pendingWeight: PendingWeight?
-    private var pendingFeature: PendingFeature?
+    private var pendingWeights: [PendingWeight] = []
+    private var pendingFeatures: [PendingFeature] = []
     private let pairingWindow: TimeInterval
 
     public init(epochMode: BS444EpochMode? = nil, pairingWindow: TimeInterval = 10) {
@@ -186,64 +186,59 @@ public struct BS444Session: Sendable {
 
     public var epochMode: BS444EpochMode? { timestampDecoder.mode }
 
-    public mutating func receiveWeight(_ fragment: Data, now: Date) throws -> BodyMeasurement? {
+    public mutating func receiveWeight(_ fragment: Data, now: Date) throws -> [BodyMeasurement] {
         expireStaleData(at: now)
-        var result: BodyMeasurement?
         for frame in weightBuffer.append(fragment) {
             let packet = try BS444Parser.parseWeight(
                 frame,
                 now: now,
                 timestampDecoder: &timestampDecoder
             )
-            pendingWeight = PendingWeight(packet: packet, receivedAt: now)
-            result = makeMeasurementIfReady()
+            pendingWeights.append(PendingWeight(packet: packet, receivedAt: now))
         }
-        return result
+        return drainReadyMeasurements()
     }
 
-    public mutating func receiveFeature(_ fragment: Data, now: Date) throws -> BodyMeasurement? {
+    public mutating func receiveFeature(_ fragment: Data, now: Date) throws -> [BodyMeasurement] {
         expireStaleData(at: now)
-        var result: BodyMeasurement?
         for frame in featureBuffer.append(fragment) {
             let packet = try BS444Parser.parseFeature(frame)
-            pendingFeature = PendingFeature(packet: packet, receivedAt: now)
-            result = makeMeasurementIfReady()
+            pendingFeatures.append(PendingFeature(packet: packet, receivedAt: now))
         }
-        return result
+        return drainReadyMeasurements()
     }
 
     public mutating func reset() {
         weightBuffer.reset()
         featureBuffer.reset()
-        pendingWeight = nil
-        pendingFeature = nil
+        pendingWeights.removeAll(keepingCapacity: true)
+        pendingFeatures.removeAll(keepingCapacity: true)
     }
 
     private mutating func expireStaleData(at date: Date) {
-        if let pendingWeight, date.timeIntervalSince(pendingWeight.receivedAt) > pairingWindow {
-            self.pendingWeight = nil
+        pendingWeights.removeAll {
+            date.timeIntervalSince($0.receivedAt) > pairingWindow
         }
-        if let pendingFeature, date.timeIntervalSince(pendingFeature.receivedAt) > pairingWindow {
-            self.pendingFeature = nil
+        pendingFeatures.removeAll {
+            date.timeIntervalSince($0.receivedAt) > pairingWindow
         }
     }
 
-    private mutating func makeMeasurementIfReady() -> BodyMeasurement? {
-        guard let pendingWeight, let pendingFeature else { return nil }
-        guard pendingWeight.packet.weightKg > 0 else {
-            self.pendingWeight = nil
-            return nil
+    private mutating func drainReadyMeasurements() -> [BodyMeasurement] {
+        var measurements: [BodyMeasurement] = []
+        while !pendingWeights.isEmpty && !pendingFeatures.isEmpty {
+            let weight = pendingWeights.removeFirst()
+            let feature = pendingFeatures.removeFirst()
+            guard weight.packet.weightKg > 0 else { continue }
+            measurements.append(BodyMeasurement(
+                timestamp: weight.packet.timestamp,
+                weightKg: weight.packet.weightKg,
+                bodyFatPercent: feature.packet.bodyFatPercent,
+                bodyWaterPercent: feature.packet.bodyWaterPercent,
+                musclePercent: feature.packet.musclePercent,
+                boneMassKg: feature.packet.boneMassKg
+            ))
         }
-        let measurement = BodyMeasurement(
-            timestamp: pendingWeight.packet.timestamp,
-            weightKg: pendingWeight.packet.weightKg,
-            bodyFatPercent: pendingFeature.packet.bodyFatPercent,
-            bodyWaterPercent: pendingFeature.packet.bodyWaterPercent,
-            musclePercent: pendingFeature.packet.musclePercent,
-            boneMassKg: pendingFeature.packet.boneMassKg
-        )
-        self.pendingWeight = nil
-        self.pendingFeature = nil
-        return measurement
+        return measurements
     }
 }

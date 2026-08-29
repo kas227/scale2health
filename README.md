@@ -17,7 +17,7 @@ The protocol details and openScale source reference are in `Scale2Health/Protoco
 
 Open `Scale2Health.xcodeproj` in Xcode 15 or newer, set a development team for the app target, and enable the HealthKit capability for the target. The deployment target is iOS 17.
 
-The current environment has Swift Command Line Tools but no full Xcode installation, so the iOS target has not been built here. The platform-independent protocol checks can be run with:
+The iOS target and XCTest bundle can be built with Xcode. The platform-independent protocol checks can also be run with:
 
 ```sh
 swift run Scale2HealthCoreChecks

@@ -98,16 +98,18 @@ final class BS444ParserTests: XCTestCase {
         let weight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)
         let feature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
 
-        XCTAssertNil(try session.receiveWeight(Data(weight.prefix(4)), now: now))
-        XCTAssertNil(try session.receiveWeight(Data(weight.dropFirst(4)), now: now))
-        XCTAssertNil(try session.receiveFeature(Data(feature.prefix(8)), now: now))
-        let measurement = try session.receiveFeature(Data(feature.dropFirst(8)), now: now)
+        XCTAssertTrue(try session.receiveWeight(Data(weight.prefix(4)), now: now).isEmpty)
+        XCTAssertTrue(try session.receiveWeight(Data(weight.dropFirst(4)), now: now).isEmpty)
+        XCTAssertTrue(try session.receiveFeature(Data(feature.prefix(8)), now: now).isEmpty)
+        let measurements = try session.receiveFeature(Data(feature.dropFirst(8)), now: now)
 
-        XCTAssertEqual(measurement?.weightKg ?? -1, 72.34, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.bodyFatPercent ?? -1, 23.4, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.bodyWaterPercent ?? -1, 55.6, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.musclePercent ?? -1, 40.2, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.boneMassKg ?? -1, 3.1, accuracy: 0.0001)
+        XCTAssertEqual(measurements.count, 1)
+        let measurement = measurements[0]
+        XCTAssertEqual(measurement.weightKg, 72.34, accuracy: 0.0001)
+        XCTAssertEqual(measurement.bodyFatPercent ?? -1, 23.4, accuracy: 0.0001)
+        XCTAssertEqual(measurement.bodyWaterPercent ?? -1, 55.6, accuracy: 0.0001)
+        XCTAssertEqual(measurement.musclePercent ?? -1, 40.2, accuracy: 0.0001)
+        XCTAssertEqual(measurement.boneMassKg ?? -1, 3.1, accuracy: 0.0001)
     }
 
     func testZeroWeightDoesNotBecomeAMeasurement() throws {
@@ -115,8 +117,8 @@ final class BS444ParserTests: XCTestCase {
         let zeroWeight = weightPacket(weightRaw: 0, timestamp: 1_700_000_000)
         let feature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
 
-        XCTAssertNil(try session.receiveWeight(zeroWeight, now: now))
-        XCTAssertNil(try session.receiveFeature(feature, now: now))
+        XCTAssertTrue(try session.receiveWeight(zeroWeight, now: now).isEmpty)
+        XCTAssertTrue(try session.receiveFeature(feature, now: now).isEmpty)
     }
 
     func testSessionAcceptsFeatureBeforeWeight() throws {
@@ -124,8 +126,25 @@ final class BS444ParserTests: XCTestCase {
         let weight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)
         let feature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
 
-        XCTAssertNil(try session.receiveFeature(feature, now: now))
-        XCTAssertNotNil(try session.receiveWeight(weight, now: now))
+        XCTAssertTrue(try session.receiveFeature(feature, now: now).isEmpty)
+        XCTAssertEqual(try session.receiveWeight(weight, now: now).count, 1)
+    }
+
+    func testSessionEmitsEveryCompleteWeightFeaturePair() throws {
+        var session = BS444Session(epochMode: .unix)
+        let firstWeight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)
+        let secondWeight = weightPacket(weightRaw: 7_235, timestamp: 1_700_000_001)
+        let firstFeature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
+        let secondFeature = featurePacket(fat: 23.5, water: 55.7, muscle: 40.3, bone: 3.2)
+
+        XCTAssertTrue(try session.receiveWeight(firstWeight + secondWeight, now: now).isEmpty)
+        let measurements = try session.receiveFeature(firstFeature + secondFeature, now: now)
+
+        XCTAssertEqual(measurements.count, 2)
+        XCTAssertEqual(measurements[0].weightKg, 72.34, accuracy: 0.0001)
+        XCTAssertEqual(measurements[1].weightKg, 72.35, accuracy: 0.0001)
+        XCTAssertEqual(measurements[0].bodyFatPercent ?? -1, 23.4, accuracy: 0.0001)
+        XCTAssertEqual(measurements[1].bodyFatPercent ?? -1, 23.5, accuracy: 0.0001)
     }
 
     func testTimestampDecoderCorrectsLegacyEpoch() {
