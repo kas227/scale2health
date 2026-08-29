@@ -1,8 +1,26 @@
 import Foundation
+import UserNotifications
 import XCTest
 @testable import Scale2Health
 
 final class ModelTests: XCTestCase {
+    @MainActor
+    func testBackgroundSyncNotificationsStackWithoutReplacingEachOther() {
+        let firstID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        let secondID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+        let first = LocalNotificationManager.measurementSavedRequest(identifier: firstID)
+        let second = LocalNotificationManager.measurementSavedRequest(identifier: secondID)
+
+        XCTAssertNotEqual(first.identifier, second.identifier)
+        XCTAssertEqual(
+            first.content.threadIdentifier,
+            LocalNotificationManager.measurementThreadIdentifier
+        )
+        XCTAssertEqual(second.content.threadIdentifier, first.content.threadIdentifier)
+        XCTAssertEqual(first.content.title, "Apple Health updated")
+        XCTAssertNil(first.trigger)
+    }
+
     func testDeviceStoreRoundTripsSelectedDevice() {
         let suiteName = "Scale2HealthTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

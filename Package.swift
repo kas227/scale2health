@@ -22,6 +22,7 @@ let package = Package(
                 "Scale2Health.entitlements",
                 "Managers/BluetoothManager.swift",
                 "Managers/HealthKitManager.swift",
+                "Managers/LocalNotificationManager.swift",
                 "Managers/AppModel.swift",
                 "Protocol/BS444_PROTOCOL.md"
             ],

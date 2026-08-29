@@ -11,6 +11,7 @@ A local-first iOS app for receiving Medisana BS444 measurements over Bluetooth L
 - Persists the selected peripheral, detected epoch mode, and an optional `Any user`/`User 1...8` measurement filter; scale-side profiles are still managed on the scale.
 - Uses CoreBluetooth restoration and makes one delayed reconnect attempt rather than scanning continuously.
 - Writes verified weight and body-fat samples to HealthKit after authorization and suppresses duplicates. Other displayed metrics are not written under unrelated HealthKit types.
+- Requests local notification permission and sends one grouped notification for each new measurement synced to Apple Health while the app is in the background.
 
 The protocol details and openScale source reference are in `Scale2Health/Protocol/BS444_PROTOCOL.md`.
 
@@ -29,4 +30,4 @@ The Xcode test target contains the XCTest fixture suite for use on a machine wit
 
 ## Hardware limitation
 
-A real iPhone and BS444 have verified foreground discovery, connection, raw 19-byte measurement delivery, decoding, and display. Repeated HealthKit writes, background delivery, and state restoration still require complete on-device validation.
+A real iPhone and BS444 have verified foreground discovery, connection, raw 19-byte measurement delivery, decoding, display, and background HealthKit delivery. Local background-sync notification presentation and notification permission behavior still require complete on-device validation.

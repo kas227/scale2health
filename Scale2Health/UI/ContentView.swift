@@ -91,6 +91,33 @@ struct ContentView: View {
                     }
                 }
 
+                Section("Notifications") {
+                    Label(
+                        model.notifications.authorizationState.title,
+                        systemImage: notificationIcon
+                    )
+                    switch model.notifications.authorizationState {
+                    case .notDetermined, .failed:
+                        Button("Allow notifications") {
+                            model.requestNotificationAuthorization()
+                        }
+                    case .denied:
+                        Button("Open Notification Settings") {
+                            model.openNotificationSettings()
+                        }
+                    case .authorized, .provisional:
+                        EmptyView()
+                    }
+                    Text("When a measurement arrives in the background and is saved to Apple Health, Scale2Health sends a notification. These sync notifications are grouped into one stack.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if let deliveryError = model.notifications.deliveryError {
+                        Text("Could not deliver the last notification: \(deliveryError)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("Raw BLE log") {
                     if model.bluetooth.logs.isEmpty {
                         Text("No BLE events yet.")
@@ -134,6 +161,15 @@ struct ContentView: View {
         case .failed: return "exclamationmark.triangle"
         case .scanning, .connecting, .discovering: return "antenna.radiowaves.left.and.right"
         case .idle, .unavailable: return "bolt.horizontal"
+        }
+    }
+
+    private var notificationIcon: String {
+        switch model.notifications.authorizationState {
+        case .authorized, .provisional: return "bell.badge"
+        case .denied: return "bell.slash"
+        case .failed: return "exclamationmark.triangle"
+        case .notDetermined: return "bell"
         }
     }
 }
