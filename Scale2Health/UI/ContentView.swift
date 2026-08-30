@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var isReceivedHistoryExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -72,14 +73,20 @@ struct ContentView: View {
 
                 if !model.bluetooth.receivedMeasurements.isEmpty {
                     Section {
-                        ForEach(Array(model.bluetooth.receivedMeasurements.enumerated()), id: \.offset) { _, measurement in
-                            MeasurementView(measurement: measurement)
-                        }
-                        Button("Clear received history", role: .destructive) {
-                            model.bluetooth.clearReceivedMeasurements()
+                        DisclosureGroup(
+                            "\(model.bluetooth.receivedMeasurements.count) received measurements",
+                            isExpanded: $isReceivedHistoryExpanded
+                        ) {
+                            ForEach(Array(model.bluetooth.receivedMeasurements.enumerated()), id: \.offset) { _, measurement in
+                                MeasurementView(measurement: measurement)
+                            }
+                            Button("Clear received history", role: .destructive) {
+                                model.bluetooth.clearReceivedMeasurements()
+                                isReceivedHistoryExpanded = false
+                            }
                         }
                     } header: {
-                        Text("Received history (\(model.bluetooth.receivedMeasurements.count))")
+                        Text("Received history")
                     } footer: {
                         Text("Decoded during this app run. Replayed records remain visible here even when Apple Health skips them as duplicates.")
                     }
