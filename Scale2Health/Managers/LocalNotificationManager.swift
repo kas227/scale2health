@@ -68,12 +68,13 @@ final class LocalNotificationManager: NSObject, ObservableObject, UNUserNotifica
 
     func notifyMeasurementSaved() {
         let request = Self.measurementSavedRequest()
-        latestSchedulingRequestIdentifier = request.identifier
+        let requestIdentifier = request.identifier
+        latestSchedulingRequestIdentifier = requestIdentifier
         deliveryError = nil
         center.add(request) { [weak self] error in
             Task { @MainActor [weak self] in
                 guard let self,
-                      self.latestSchedulingRequestIdentifier == request.identifier else {
+                      self.latestSchedulingRequestIdentifier == requestIdentifier else {
                     return
                 }
                 self.deliveryError = error?.localizedDescription
@@ -89,8 +90,6 @@ final class LocalNotificationManager: NSObject, ObservableObject, UNUserNotifica
         content.body = "A scale measurement received in the background was synced successfully."
         content.sound = .default
         content.threadIdentifier = measurementThreadIdentifier
-        content.summaryArgument = "measurement"
-        content.summaryArgumentCount = 1
 
         // Unique identifiers preserve every notification; the shared thread groups them.
         return UNNotificationRequest(
@@ -100,7 +99,7 @@ final class LocalNotificationManager: NSObject, ObservableObject, UNUserNotifica
         )
     }
 
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
@@ -109,7 +108,7 @@ final class LocalNotificationManager: NSObject, ObservableObject, UNUserNotifica
         completionHandler([.banner, .list, .sound])
     }
 
-    private static func authorizationState(
+    nonisolated private static func authorizationState(
         for status: UNAuthorizationStatus
     ) -> AuthorizationState {
         switch status {
