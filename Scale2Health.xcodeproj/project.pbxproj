@@ -1,0 +1,560 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000010000000000000001 /* Scale2HealthApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000001 /* Scale2HealthApp.swift */; };
+		A10000010000000000000002 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000002 /* AppModel.swift */; };
+		A10000010000000000000003 /* BluetoothManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000003 /* BluetoothManager.swift */; };
+		A10000010000000000000004 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000004 /* HealthKitManager.swift */; };
+		A10000010000000000000005 /* BodyMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000005 /* BodyMeasurement.swift */; };
+		A10000010000000000000006 /* MeasurementDeduplicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000006 /* MeasurementDeduplicator.swift */; };
+		A10000010000000000000007 /* ScaleDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000007 /* ScaleDevice.swift */; };
+		A10000010000000000000008 /* BS444Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000008 /* BS444Parser.swift */; };
+		A10000010000000000000009 /* BS444Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* BS444Protocol.swift */; };
+		A1000001000000000000000A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000A /* ContentView.swift */; };
+		A1000001000000000000000E /* DeviceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000E /* DeviceStore.swift */; };
+		A1000001000000000000000F /* LocalNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000F /* LocalNotificationManager.swift */; };
+		A10000010000000000000010 /* CoreBluetooth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000001 /* CoreBluetooth.framework */; };
+		A10000010000000000000011 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000002 /* HealthKit.framework */; };
+		A10000010000000000000012 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000003 /* SwiftUI.framework */; };
+		A10000010000000000000013 /* Combine.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000004 /* Combine.framework */; };
+		A10000010000000000000014 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000006 /* UserNotifications.framework */; };
+		A10000010000000000000020 /* BS444ParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* BS444ParserTests.swift */; };
+		A10000010000000000000021 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* ModelTests.swift */; };
+		A10000010000000000000022 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000005 /* XCTest.framework */; };
+		A10000010000000000000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A80000010000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A70000010000000000000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A70000010000000000000001;
+			remoteInfo = Scale2Health;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A20000010000000000000001 /* Scale2HealthApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scale2HealthApp.swift; sourceTree = "<group>"; };
+		A20000010000000000000002 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		A20000010000000000000003 /* BluetoothManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000004 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000005 /* BodyMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMeasurement.swift; sourceTree = "<group>"; };
+		A20000010000000000000006 /* MeasurementDeduplicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurementDeduplicator.swift; sourceTree = "<group>"; };
+		A20000010000000000000007 /* ScaleDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaleDevice.swift; sourceTree = "<group>"; };
+		A20000010000000000000008 /* BS444Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS444Parser.swift; sourceTree = "<group>"; };
+		A20000010000000000000009 /* BS444Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS444Protocol.swift; sourceTree = "<group>"; };
+		A2000001000000000000000A /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2000001000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A2000001000000000000000C /* Scale2Health.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Scale2Health.entitlements; sourceTree = "<group>"; };
+		A2000001000000000000000D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000001000000000000000E /* DeviceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceStore.swift; sourceTree = "<group>"; };
+		A2000001000000000000000F /* LocalNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000020 /* BS444ParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS444ParserTests.swift; sourceTree = "<group>"; };
+		A20000010000000000000021 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
+		A30000010000000000000001 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
+		A30000010000000000000002 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		A30000010000000000000003 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		A30000010000000000000004 /* Combine.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Combine.framework; path = System/Library/Frameworks/Combine.framework; sourceTree = SDKROOT; };
+		A30000010000000000000006 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		A30000010000000000000005 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		A40000010000000000000001 /* Scale2Health.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Scale2Health.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A40000010000000000000002 /* Scale2HealthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Scale2HealthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A50000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000010 /* CoreBluetooth.framework in Frameworks */,
+				A10000010000000000000011 /* HealthKit.framework in Frameworks */,
+				A10000010000000000000012 /* SwiftUI.framework in Frameworks */,
+				A10000010000000000000013 /* Combine.framework in Frameworks */,
+				A10000010000000000000014 /* UserNotifications.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A50000010000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000022 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A60000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A60000010000000000000002 /* Scale2Health */,
+				A60000010000000000000007 /* Scale2HealthTests */,
+				A60000010000000000000008 /* Products */,
+				A60000010000000000000009 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A60000010000000000000002 /* Scale2Health */ = {
+			isa = PBXGroup;
+			children = (
+				A60000010000000000000003 /* App */,
+				A60000010000000000000004 /* Managers */,
+				A60000010000000000000005 /* Models */,
+				A60000010000000000000006 /* Protocol */,
+				A6000001000000000000000A /* UI */,
+				A2000001000000000000000B /* Info.plist */,
+				A2000001000000000000000C /* Scale2Health.entitlements */,
+				A2000001000000000000000D /* Assets.xcassets */,
+			);
+			path = Scale2Health;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000001 /* Scale2HealthApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000004 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000002 /* AppModel.swift */,
+				A20000010000000000000003 /* BluetoothManager.swift */,
+				A20000010000000000000004 /* HealthKitManager.swift */,
+				A2000001000000000000000E /* DeviceStore.swift */,
+				A2000001000000000000000F /* LocalNotificationManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000005 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000005 /* BodyMeasurement.swift */,
+				A20000010000000000000006 /* MeasurementDeduplicator.swift */,
+				A20000010000000000000007 /* ScaleDevice.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000006 /* Protocol */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000008 /* BS444Parser.swift */,
+				A20000010000000000000009 /* BS444Protocol.swift */,
+			);
+			path = Protocol;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000007 /* Scale2HealthTests */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000020 /* BS444ParserTests.swift */,
+				A20000010000000000000021 /* ModelTests.swift */,
+			);
+			path = Scale2HealthTests;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000008 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A40000010000000000000001 /* Scale2Health.app */,
+				A40000010000000000000002 /* Scale2HealthTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A60000010000000000000009 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A30000010000000000000001 /* CoreBluetooth.framework */,
+				A30000010000000000000002 /* HealthKit.framework */,
+				A30000010000000000000003 /* SwiftUI.framework */,
+				A30000010000000000000004 /* Combine.framework */,
+				A30000010000000000000006 /* UserNotifications.framework */,
+				A30000010000000000000005 /* XCTest.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A6000001000000000000000A /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				A2000001000000000000000A /* ContentView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A70000010000000000000001 /* Scale2Health */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B90000010000000000000001 /* Build configuration list for PBXNativeTarget "Scale2Health" */;
+			buildPhases = (
+				A50000010000000000000003 /* Sources */,
+				A50000010000000000000001 /* Frameworks */,
+				A50000010000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Scale2Health;
+			productName = Scale2Health;
+			productReference = A40000010000000000000001 /* Scale2Health.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A70000010000000000000002 /* Scale2HealthTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B90000010000000000000002 /* Build configuration list for PBXNativeTarget "Scale2HealthTests" */;
+			buildPhases = (
+				A50000010000000000000004 /* Sources */,
+				A50000010000000000000002 /* Frameworks */,
+				A50000010000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A80000010000000000000001 /* PBXTargetDependency */,
+			);
+			name = Scale2HealthTests;
+			productName = Scale2HealthTests;
+			productReference = A40000010000000000000002 /* Scale2HealthTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A70000010000000000000010 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					A70000010000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A70000010000000000000002 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = A70000010000000000000001;
+					};
+				};
+			};
+			buildConfigurationList = A90000010000000000000010 /* Build configuration list for PBXProject "Scale2Health" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A60000010000000000000001;
+			productRefGroup = A60000010000000000000008 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A70000010000000000000001 /* Scale2Health */,
+				A70000010000000000000002 /* Scale2HealthTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A50000010000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000030 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A50000010000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A50000010000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000001 /* Scale2HealthApp.swift in Sources */,
+				A10000010000000000000002 /* AppModel.swift in Sources */,
+				A10000010000000000000003 /* BluetoothManager.swift in Sources */,
+				A10000010000000000000004 /* HealthKitManager.swift in Sources */,
+				A1000001000000000000000E /* DeviceStore.swift in Sources */,
+				A1000001000000000000000F /* LocalNotificationManager.swift in Sources */,
+				A10000010000000000000005 /* BodyMeasurement.swift in Sources */,
+				A10000010000000000000006 /* MeasurementDeduplicator.swift in Sources */,
+				A10000010000000000000007 /* ScaleDevice.swift in Sources */,
+				A10000010000000000000008 /* BS444Parser.swift in Sources */,
+				A10000010000000000000009 /* BS444Protocol.swift in Sources */,
+				A1000001000000000000000A /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A50000010000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000020 /* BS444ParserTests.swift in Sources */,
+				A10000010000000000000021 /* ModelTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A80000010000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A70000010000000000000001 /* Scale2Health */;
+			targetProxy = A80000010000000000000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A90000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A90000010000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A90000010000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Scale2Health/Scale2Health.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				INFOPLIST_FILE = Scale2Health/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Scale2Health;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.scale2health.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A90000010000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Scale2Health/Scale2Health.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = NO;
+				INFOPLIST_FILE = Scale2Health/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Scale2Health;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.scale2health.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A90000010000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.scale2health.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scale2Health.app/Scale2Health";
+			};
+			name = Debug;
+		};
+		A90000010000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.scale2health.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scale2Health.app/Scale2Health";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A90000010000000000000010 /* Build configuration list for PBXProject "Scale2Health" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000001 /* Debug */,
+				A90000010000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B90000010000000000000001 /* Build configuration list for PBXNativeTarget "Scale2Health" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000003 /* Debug */,
+				A90000010000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B90000010000000000000002 /* Build configuration list for PBXNativeTarget "Scale2HealthTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A90000010000000000000005 /* Debug */,
+				A90000010000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A70000010000000000000010 /* Project object */;
+}
