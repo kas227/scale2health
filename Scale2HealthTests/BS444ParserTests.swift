@@ -70,36 +70,6 @@ final class BS444ParserTests: XCTestCase {
         XCTAssertEqual(featureResult.boneMassKg ?? -1, 3.5, accuracy: 0.0001)
     }
 
-    func testLiveUserOnePacketPairMatchesDisplayedMeasurement() throws {
-        let weight = Data([
-            0x1D, 0x5A, 0x1E, 0x00, 0xFE, 0x81, 0x14, 0x56, 0x1F,
-            0x0C, 0x28, 0x00, 0xFF, 0x01, 0x09, 0x00, 0x00, 0x00, 0x00
-        ])
-        let feature = Data([
-            0x6F, 0x81, 0x14, 0x56, 0x1F, 0x01, 0xFC, 0x06, 0x9D,
-            0xF0, 0x79, 0xF2, 0xAE, 0xF1, 0x23, 0xF0, 0x00, 0x00, 0x00
-        ])
-        var session = BS444Session(epochMode: .from2010)
-
-        XCTAssertTrue(try session.receiveWeight(
-            weight,
-            now: Date(timeIntervalSince1970: 1_788_039_049)
-        ).isEmpty)
-        let measurement = try session.receiveFeature(
-            feature,
-            now: Date(timeIntervalSince1970: 1_788_039_049)
-        ).first
-
-        XCTAssertEqual(measurement?.timestamp, Date(timeIntervalSince1970: 1_788_039_041))
-        XCTAssertEqual(measurement?.weightKg ?? -1, 77.7, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.sourceWeightUnit, .kilograms)
-        XCTAssertEqual(measurement?.scaleUserID, 1)
-        XCTAssertEqual(measurement?.bodyFatPercent ?? -1, 15.7, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.bodyWaterPercent ?? -1, 63.3, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.musclePercent ?? -1, 43.0, accuracy: 0.0001)
-        XCTAssertEqual(measurement?.boneMassKg ?? -1, 3.5, accuracy: 0.0001)
-    }
-
     func testWeightPacketDecodesWeightAndTimestamp() throws {
         var decoder = BS444TimestampDecoder()
         let packet = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)

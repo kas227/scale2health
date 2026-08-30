@@ -431,7 +431,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = V7APR3KXF6;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_TESTABILITY = YES;
 				INFOPLIST_FILE = Scale2Health/Info.plist;
@@ -461,7 +460,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = V7APR3KXF6;
 				ENABLE_PREVIEWS = NO;
 				INFOPLIST_FILE = Scale2Health/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Scale2Health;
