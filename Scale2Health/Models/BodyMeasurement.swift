@@ -4,6 +4,9 @@ import Foundation
 public struct BodyMeasurement: Codable, Equatable, Sendable {
     public let timestamp: Date
     public let weightKg: Double
+    /// Raw protocol values used to identify a weighing across repeated history dumps.
+    public let rawTimestamp: UInt32?
+    public let rawWeight: UInt16?
     /// User slot selected by the scale (1...8), or nil for an unassigned measurement.
     public let scaleUserID: UInt8?
     /// Unit encoded by the scale; weightKg is always normalized to kilograms.
@@ -17,6 +20,8 @@ public struct BodyMeasurement: Codable, Equatable, Sendable {
     public init(
         timestamp: Date,
         weightKg: Double,
+        rawTimestamp: UInt32? = nil,
+        rawWeight: UInt16? = nil,
         scaleUserID: UInt8? = nil,
         sourceWeightUnit: BS444WeightUnit = .kilograms,
         bodyFatPercent: Double? = nil,
@@ -26,6 +31,8 @@ public struct BodyMeasurement: Codable, Equatable, Sendable {
     ) {
         self.timestamp = timestamp
         self.weightKg = weightKg
+        self.rawTimestamp = rawTimestamp
+        self.rawWeight = rawWeight
         self.scaleUserID = scaleUserID
         self.sourceWeightUnit = sourceWeightUnit
         self.bodyFatPercent = bodyFatPercent

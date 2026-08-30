@@ -24,7 +24,8 @@ The 16-bit UUIDs below use the Bluetooth base UUID (`0000xxxx-0000-1000-8000-008
 3. Write the clock command to `CHR_CMD` after the required notifications are enabled:
    `02 <timestamp byte 0> <timestamp byte 1> <timestamp byte 2> <timestamp byte 3>`.
 4. The timestamp is a little-endian 32-bit seconds value. BS444/BS440 name prefixes generally use seconds from `2010-01-01`; the handler also supports Unix seconds. The app chooses the known prefix when available and corrects unknown/incorrect epoch assumptions when a received timestamp is close to the current time.
-5. The scale delivers a stream of 19-byte weight notifications while the user remains on it, followed by the 19-byte body-composition notification. The app buffers fixed-size fragments, keeps the latest weight frame, and joins that latest weight with the later feature frame only when both frames name the same scale user. This matches openScale's single `current` measurement without mixing two users' data.
+5. The clock command also triggers replay of retained measurements. The BS444 advertises 30 storage spaces for each of eight recognized users. This is an overlapping snapshot rather than a new-record stream; no record cursor, acknowledgement, or delete command is known.
+6. Live and historical weight/body-composition frames are joined by their shared user ID and raw timestamp. Notification order is not a safe correlation key because multiple weight or feature frames can arrive consecutively during replay.
 
 ## Frames
 
@@ -57,6 +58,8 @@ The packet is 19 bytes:
 - bytes `16..18`: reserved.
 
 Each composition value is an unsigned little-endian 16-bit value masked with `0x0FFF`, then divided by `10`. Zero values are treated as absent by the normalized model so the UI and HealthKit writer do not store false zero readings.
+
+The feature timestamp and user ID must match the corresponding weight frame. Duplicate suppression is handled by the app using a per-device fingerprint because the protocol exposes no verified record identifier.
 
 ## Scale users and unsupported controls
 
