@@ -73,6 +73,32 @@ final class ModelTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
+    func testDeduplicatorDistinguishesScalesAndIgnoresCompositionChanges() {
+        let suiteName = "Scale2HealthTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        let deduplicator = MeasurementDeduplicator(defaults: defaults)
+        let first = BodyMeasurement(
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000),
+            weightKg: 72.34,
+            rawTimestamp: 437_696_000,
+            rawWeight: 7_234,
+            scaleUserID: 1
+        )
+        let completed = BodyMeasurement(
+            timestamp: first.timestamp,
+            weightKg: first.weightKg,
+            rawTimestamp: first.rawTimestamp,
+            rawWeight: first.rawWeight,
+            scaleUserID: 1,
+            bodyFatPercent: 23.4
+        )
+
+        deduplicator.remember(first, sourceDeviceIdentifier: "scale-a")
+        XCTAssertTrue(deduplicator.contains(completed, sourceDeviceIdentifier: "scale-a"))
+        XCTAssertFalse(deduplicator.contains(completed, sourceDeviceIdentifier: "scale-b"))
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     func testDeduplicatorRecognizesAndMigratesLegacyFingerprint() {
         let suiteName = "Scale2HealthTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

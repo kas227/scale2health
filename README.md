@@ -18,6 +18,8 @@ It is not a medical device. Background Bluetooth behavior is controlled by iOS a
 - Restores the CoreBluetooth session and makes a bounded reconnect attempt.
 - Writes **weight** and **body-fat percentage** to Apple Health after authorization.
 - Suppresses duplicate HealthKit writes and can notify after a successful background sync.
+- Replays up to 30 retained measurements per recognized scale user and pairs history records by timestamp.
+- Shows up to 100 decoded measurements from the current app run for history-sync verification.
 - Keeps a bounded in-memory BLE log for troubleshooting.
 
 Body water, muscle percentage, and bone mass are displayed but are not written to HealthKit because the target HealthKit API has no direct types for those scale values.
@@ -34,7 +36,7 @@ The data path is:
 BS444 scale -> Bluetooth -> Scale2Health -> Apple Health
 ```
 
-Scale2Health stores the selected peripheral, user filter, detected epoch mode, and up to 32 recent measurement fingerprints in its local `UserDefaults` container. The raw BLE log is kept in memory and leaves the app only if you explicitly share it. Apple Health receives only the sample types you authorize.
+Scale2Health stores the selected peripheral, user filter, detected epoch mode, and up to 512 per-device measurement fingerprints in its local `UserDefaults` container. The received-measurement history and raw BLE log are kept in memory and leave the app only if you explicitly share the log. Apple Health receives only the sample types you authorize.
 
 ## Requirements
 
@@ -83,3 +85,5 @@ The BS444 implementation is based on the protocol work in [openScale](https://gi
 ## License
 
 Scale2Health is licensed under the [GNU General Public License v3.0](LICENSE).
+Upstream protocol references and their licenses are documented in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

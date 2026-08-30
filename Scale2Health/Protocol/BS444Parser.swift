@@ -1,3 +1,8 @@
+// Portions of the BS44x protocol implementation are adapted from openScale's
+// MedisanaBs44xHandler, Copyright (C) 2025 olie.xdev, licensed GPL-3.0-or-later.
+// Modified for Scale2Health in 2026 and distributed under GPL-3.0-only.
+// See LICENSE and THIRD_PARTY_NOTICES.md.
+
 import Foundation
 
 public enum BS444ParseError: Error, Equatable, CustomStringConvertible {
@@ -15,6 +20,7 @@ public enum BS444ParseError: Error, Equatable, CustomStringConvertible {
 }
 
 public struct BS444WeightPacket: Equatable, Sendable {
+    public let rawWeight: UInt16
     public let weightKg: Double
     public let sourceUnit: BS444WeightUnit
     public let userID: UInt8?
@@ -25,6 +31,7 @@ public struct BS444WeightPacket: Equatable, Sendable {
 
 public struct BS444FeaturePacket: Equatable, Sendable {
     public let userID: UInt8?
+    public let rawTimestamp: UInt32
     public let bodyFatPercent: Double?
     public let bodyWaterPercent: Double?
     public let musclePercent: Double?
@@ -48,15 +55,27 @@ public struct BS444TimestampDecoder: Sendable {
         let nowInterval = now.timeIntervalSince1970
         let unixIsNear = abs(unixDate.timeIntervalSince1970 - nowInterval) <= proximity
         let from2010IsNear = abs(from2010Date.timeIntervalSince1970 - nowInterval) <= proximity
+        let earliestSupported = TimeInterval(BS444Protocol.scaleEpochOffset)
+        let latestSupported = nowInterval + 24 * 60 * 60
+        let unixIsPlausible = (earliestSupported...latestSupported).contains(unixDate.timeIntervalSince1970)
+        let from2010IsPlausible = (earliestSupported...latestSupported).contains(from2010Date.timeIntervalSince1970)
 
         let selected: BS444EpochMode
         switch mode {
         case .unix:
-            selected = !unixIsNear && from2010IsNear ? .from2010 : .unix
+            selected = (!unixIsPlausible && from2010IsPlausible) || (!unixIsNear && from2010IsNear)
+                ? .from2010
+                : .unix
         case .from2010:
-            selected = !from2010IsNear && unixIsNear ? .unix : .from2010
+            selected = (!from2010IsPlausible && unixIsPlausible) || (!from2010IsNear && unixIsNear)
+                ? .unix
+                : .from2010
         case nil:
-            if unixIsNear {
+            if unixIsPlausible && !from2010IsPlausible {
+                selected = .unix
+            } else if from2010IsPlausible && !unixIsPlausible {
+                selected = .from2010
+            } else if unixIsNear {
                 selected = .unix
             } else if from2010IsNear {
                 selected = .from2010
@@ -126,6 +145,7 @@ public enum BS444Parser {
         let rawTimestamp = littleEndianUInt32(data, offset: 5)
         let decodedTime = timestampDecoder.decode(raw: rawTimestamp, now: now)
         return BS444WeightPacket(
+            rawWeight: rawWeight,
             weightKg: weightInKilograms(rawWeight, unit: sourceUnit),
             sourceUnit: sourceUnit,
             userID: decodeUserID(data[13]),
@@ -145,6 +165,7 @@ public enum BS444Parser {
 
         return BS444FeaturePacket(
             userID: decodeUserID(data[5]),
+            rawTimestamp: littleEndianUInt32(data, offset: 1),
             bodyFatPercent: positiveOrNil(decode12BitTenth(data, offset: 8)),
             bodyWaterPercent: positiveOrNil(decode12BitTenth(data, offset: 10)),
             musclePercent: positiveOrNil(decode12BitTenth(data, offset: 12)),
@@ -187,9 +208,14 @@ public enum BS444Parser {
     }
 }
 
-/// Joins weight and feature notifications. The scale normally sends weight first, but feature-first
-/// ordering is accepted so the parser remains useful with buffered/replayed notifications.
+/// Joins live and historical notifications by their protocol identity. History dumps can contain
+/// all weight frames before all feature frames, so notification order is not a safe correlation key.
 public struct BS444Session: Sendable {
+    private struct MeasurementKey: Hashable, Sendable {
+        let userID: UInt8?
+        let rawTimestamp: UInt32
+    }
+
     private struct PendingWeight: Sendable {
         let packet: BS444WeightPacket
         let receivedAt: Date
@@ -203,13 +229,19 @@ public struct BS444Session: Sendable {
     private var weightBuffer = BS444FrameBuffer(frameLength: BS444Protocol.weightFrameLength)
     private var featureBuffer = BS444FrameBuffer(frameLength: BS444Protocol.featureFrameLength)
     private var timestampDecoder: BS444TimestampDecoder
-    private var pendingWeight: PendingWeight?
-    private var pendingFeature: PendingFeature?
+    private var pendingWeights: [MeasurementKey: PendingWeight] = [:]
+    private var pendingFeatures: [MeasurementKey: PendingFeature] = [:]
     private let pairingWindow: TimeInterval
+    private let maximumPendingRecords: Int
 
-    public init(epochMode: BS444EpochMode? = nil, pairingWindow: TimeInterval = 10) {
+    public init(
+        epochMode: BS444EpochMode? = nil,
+        pairingWindow: TimeInterval = 60,
+        maximumPendingRecords: Int = 64
+    ) {
         self.timestampDecoder = BS444TimestampDecoder(mode: epochMode)
         self.pairingWindow = pairingWindow
+        self.maximumPendingRecords = max(1, maximumPendingRecords)
     }
 
     public var epochMode: BS444EpochMode? { timestampDecoder.mode }
@@ -223,8 +255,10 @@ public struct BS444Session: Sendable {
                 now: now,
                 timestampDecoder: &timestampDecoder
             )
-            pendingWeight = PendingWeight(packet: packet, receivedAt: now)
-            if let measurement = makeMeasurementIfReady() {
+            let key = MeasurementKey(userID: packet.userID, rawTimestamp: packet.rawTimestamp)
+            pendingWeights[key] = PendingWeight(packet: packet, receivedAt: now)
+            trimPendingRecords()
+            if let measurement = makeMeasurementIfReady(for: key, now: now) {
                 measurements.append(measurement)
             }
         }
@@ -236,8 +270,10 @@ public struct BS444Session: Sendable {
         var measurements: [BodyMeasurement] = []
         for frame in featureBuffer.append(fragment) {
             let packet = try BS444Parser.parseFeature(frame)
-            pendingFeature = PendingFeature(packet: packet, receivedAt: now)
-            if let measurement = makeMeasurementIfReady() {
+            let key = MeasurementKey(userID: packet.userID, rawTimestamp: packet.rawTimestamp)
+            pendingFeatures[key] = PendingFeature(packet: packet, receivedAt: now)
+            trimPendingRecords()
+            if let measurement = makeMeasurementIfReady(for: key, now: now) {
                 measurements.append(measurement)
             }
         }
@@ -247,34 +283,43 @@ public struct BS444Session: Sendable {
     public mutating func reset() {
         weightBuffer.reset()
         featureBuffer.reset()
-        pendingWeight = nil
-        pendingFeature = nil
+        pendingWeights.removeAll(keepingCapacity: true)
+        pendingFeatures.removeAll(keepingCapacity: true)
     }
 
     private mutating func expireStaleData(at date: Date) {
-        if let pendingWeight, date.timeIntervalSince(pendingWeight.receivedAt) > pairingWindow {
-            self.pendingWeight = nil
+        pendingWeights = pendingWeights.filter { date.timeIntervalSince($0.value.receivedAt) <= pairingWindow }
+        pendingFeatures = pendingFeatures.filter { date.timeIntervalSince($0.value.receivedAt) <= pairingWindow }
+    }
+
+    private mutating func trimPendingRecords() {
+        while pendingWeights.count > maximumPendingRecords,
+              let oldest = pendingWeights.min(by: { $0.value.receivedAt < $1.value.receivedAt })?.key {
+            pendingWeights.removeValue(forKey: oldest)
         }
-        if let pendingFeature, date.timeIntervalSince(pendingFeature.receivedAt) > pairingWindow {
-            self.pendingFeature = nil
+        while pendingFeatures.count > maximumPendingRecords,
+              let oldest = pendingFeatures.min(by: { $0.value.receivedAt < $1.value.receivedAt })?.key {
+            pendingFeatures.removeValue(forKey: oldest)
         }
     }
 
-    private mutating func makeMeasurementIfReady() -> BodyMeasurement? {
-        guard let pendingWeight, let pendingFeature else { return nil }
-        guard pendingWeight.packet.weightKg > 0 else {
-            self.pendingWeight = nil
+    private mutating func makeMeasurementIfReady(for key: MeasurementKey, now: Date) -> BodyMeasurement? {
+        guard let pendingWeight = pendingWeights[key], pendingFeatures[key] != nil else { return nil }
+        pendingWeights.removeValue(forKey: key)
+        let pendingFeature = pendingFeatures.removeValue(forKey: key)!
+        guard pendingWeight.packet.weightKg > 0, pendingWeight.packet.rawTimestamp != 0 else {
             return nil
         }
-        guard pendingWeight.packet.userID == pendingFeature.packet.userID else {
-            // Never combine body composition from one scale user with another user's weight.
-            self.pendingWeight = nil
-            self.pendingFeature = nil
+        let earliestSupportedDate = Date(timeIntervalSince1970: TimeInterval(BS444Protocol.scaleEpochOffset))
+        guard pendingWeight.packet.timestamp >= earliestSupportedDate,
+              pendingWeight.packet.timestamp <= now.addingTimeInterval(24 * 60 * 60) else {
             return nil
         }
         let measurement = BodyMeasurement(
             timestamp: pendingWeight.packet.timestamp,
             weightKg: pendingWeight.packet.weightKg,
+            rawTimestamp: pendingWeight.packet.rawTimestamp,
+            rawWeight: pendingWeight.packet.rawWeight,
             scaleUserID: pendingWeight.packet.userID,
             sourceWeightUnit: pendingWeight.packet.sourceUnit,
             bodyFatPercent: pendingFeature.packet.bodyFatPercent,
@@ -282,8 +327,6 @@ public struct BS444Session: Sendable {
             musclePercent: pendingFeature.packet.musclePercent,
             boneMassKg: pendingFeature.packet.boneMassKg
         )
-        self.pendingWeight = nil
-        self.pendingFeature = nil
         return measurement
     }
 }

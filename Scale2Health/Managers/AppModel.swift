@@ -11,8 +11,11 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var lastSavedMeasurement: BodyMeasurement?
     @Published private(set) var healthKitMessage: String?
+    @Published private(set) var syncSavedCount = 0
+    @Published private(set) var syncDuplicateCount = 0
 
     private var managerCancellables = Set<AnyCancellable>()
+    private var syncGeneration = 0
 
     init(
         bluetooth: BluetoothManager? = nil,
@@ -48,13 +51,22 @@ final class AppModel: ObservableObject {
             }
             .store(in: &managerCancellables)
 
-        resolvedBluetooth.onMeasurement = { [weak self] measurement in
+        resolvedBluetooth.onSyncStarted = { [weak self] in
+            self?.syncGeneration += 1
+            self?.syncSavedCount = 0
+            self?.syncDuplicateCount = 0
+            self?.healthKitMessage = "Checking scale history..."
+        }
+        resolvedBluetooth.onMeasurement = { [weak self] measurement, sourceDeviceIdentifier in
             // BluetoothManager invokes this callback synchronously on its main queue, so this
             // records delivery context before the async HealthKit save can change app state.
             let receivedInBackground = UIApplication.shared.applicationState == .background
+            let generation = self?.syncGeneration
             Task { @MainActor [weak self] in
                 await self?.receive(
                     measurement,
+                    sourceDeviceIdentifier: sourceDeviceIdentifier,
+                    syncGeneration: generation,
                     receivedInBackground: receivedInBackground
                 )
             }
@@ -86,7 +98,12 @@ final class AppModel: ObservableObject {
                let latestMeasurement = bluetooth.latestMeasurement {
                 // This is an explicit foreground replay after authorization, not a new
                 // background Bluetooth delivery.
-                await receive(latestMeasurement, receivedInBackground: false)
+                await receive(
+                    latestMeasurement,
+                    sourceDeviceIdentifier: bluetooth.selectedDevice?.identifier,
+                    syncGeneration: syncGeneration,
+                    receivedInBackground: false
+                )
             }
         }
     }
@@ -105,6 +122,8 @@ final class AppModel: ObservableObject {
 
     private func receive(
         _ measurement: BodyMeasurement,
+        sourceDeviceIdentifier: String? = nil,
+        syncGeneration measurementGeneration: Int? = nil,
         receivedInBackground: Bool
     ) async {
         guard HealthKitManager.writesEnabled else {
@@ -116,16 +135,26 @@ final class AppModel: ObservableObject {
             return
         }
         do {
-            let didSave = try await healthKit.save(measurement)
-            lastSavedMeasurement = measurement
-            healthKitMessage = didSave
-                ? "Saved supported values to Apple Health."
-                : "Duplicate measurement skipped."
+            let didSave = try await healthKit.save(
+                measurement,
+                sourceDeviceIdentifier: sourceDeviceIdentifier
+            )
+            if measurementGeneration == nil || measurementGeneration == syncGeneration {
+                lastSavedMeasurement = measurement
+                if didSave {
+                    syncSavedCount += 1
+                } else {
+                    syncDuplicateCount += 1
+                }
+                healthKitMessage = "Scale history: \(syncSavedCount) saved, \(syncDuplicateCount) already synced."
+            }
             if didSave && receivedInBackground {
                 notifications.notifyMeasurementSaved()
             }
         } catch {
-            healthKitMessage = error.localizedDescription
+            if measurementGeneration == nil || measurementGeneration == syncGeneration {
+                healthKitMessage = error.localizedDescription
+            }
         }
     }
 }

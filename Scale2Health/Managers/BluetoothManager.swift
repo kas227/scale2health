@@ -31,9 +31,11 @@ final class BluetoothManager: NSObject, ObservableObject {
     @Published private(set) var discoveredDevices: [ScaleDevice] = []
     @Published private(set) var selectedDevice: ScaleDevice?
     @Published private(set) var latestMeasurement: BodyMeasurement?
+    @Published private(set) var receivedMeasurements: [BodyMeasurement] = []
     @Published private(set) var logs: [String] = []
 
-    var onMeasurement: ((BodyMeasurement) -> Void)?
+    var onMeasurement: ((BodyMeasurement, String) -> Void)?
+    var onSyncStarted: (() -> Void)?
 
     private let store: DeviceStore
     private var central: CBCentralManager!
@@ -147,6 +149,10 @@ final class BluetoothManager: NSObject, ObservableObject {
         discoveredDevices = []
     }
 
+    func clearReceivedMeasurements() {
+        receivedMeasurements.removeAll()
+    }
+
     func setUserIDFilter(_ userID: UInt8?) {
         guard var saved = selectedDevice else { return }
         let normalized = userID.flatMap { (1...8).contains($0) ? $0 : nil }
@@ -220,6 +226,7 @@ final class BluetoothManager: NSObject, ObservableObject {
             ?? selectedDevice.flatMap { BS444Protocol.predictedEpochMode(for: $0.name) }
             ?? .unix
         let command = BS444Protocol.timeCommand(date: Date(), epochMode: mode)
+        onSyncStarted?()
         peripheral.writeValue(command, for: commandCharacteristic, type: .withResponse)
         state = .ready
         appendLog("Enabled weight (\(weightCharacteristic.uuid)) and feature (\(featureCharacteristic.uuid)) notifications")
@@ -243,9 +250,13 @@ final class BluetoothManager: NSObject, ObservableObject {
         }
 
         latestMeasurement = measurement
+        receivedMeasurements.insert(measurement, at: 0)
+        if receivedMeasurements.count > 100 {
+            receivedMeasurements.removeLast(receivedMeasurements.count - 100)
+        }
         let user = measurement.scaleUserID.map { "user \($0)" } ?? "unassigned user"
         appendLog("Decoded measurement: \(measurement.weightKg) kg from \(measurement.sourceWeightUnit.label), \(user), at \(measurement.timestamp)")
-        onMeasurement?(measurement)
+        onMeasurement?(measurement, selectedDevice?.identifier ?? currentPeripheral?.identifier.uuidString ?? "unknown")
     }
 
     private func resetConnection() {
