@@ -64,6 +64,7 @@ final class BS444ParserTests: XCTestCase {
         XCTAssertEqual(weightResult.sourceUnit, .kilograms)
         XCTAssertEqual(weightResult.userID, 1)
         XCTAssertEqual(featureResult.userID, 1)
+        XCTAssertEqual(featureResult.rawTimestamp, 0x0DF40F80)
         XCTAssertEqual(featureResult.bodyFatPercent ?? -1, 34.3, accuracy: 0.0001)
         XCTAssertEqual(featureResult.bodyWaterPercent ?? -1, 48.3, accuracy: 0.0001)
         XCTAssertEqual(featureResult.musclePercent ?? -1, 34.7, accuracy: 0.0001)
@@ -234,7 +235,13 @@ final class BS444ParserTests: XCTestCase {
         var session = BS444Session(epochMode: .unix)
         let transientWeight = weightPacket(weightRaw: 1_100, timestamp: 1_700_000_000)
         let finalWeight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_001)
-        let feature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
+        let feature = featurePacket(
+            fat: 23.4,
+            water: 55.6,
+            muscle: 40.2,
+            bone: 3.1,
+            timestamp: 1_700_000_001
+        )
 
         XCTAssertTrue(try session.receiveWeight(transientWeight, now: now).isEmpty)
         XCTAssertTrue(try session.receiveWeight(finalWeight, now: now).isEmpty)
@@ -249,7 +256,13 @@ final class BS444ParserTests: XCTestCase {
         let firstFeature = featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1)
         let firstWeight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000)
         let secondWeight = weightPacket(weightRaw: 7_235, timestamp: 1_700_000_001)
-        let secondFeature = featurePacket(fat: 23.5, water: 55.7, muscle: 40.3, bone: 3.2)
+        let secondFeature = featurePacket(
+            fat: 23.5,
+            water: 55.7,
+            muscle: 40.3,
+            bone: 3.2,
+            timestamp: 1_700_000_001
+        )
 
         XCTAssertTrue(try session.receiveFeature(firstFeature, now: now).isEmpty)
         let completed = try session.receiveWeight(firstWeight + secondWeight, now: now)
@@ -261,6 +274,56 @@ final class BS444ParserTests: XCTestCase {
         XCTAssertEqual(remaining.first?.weightKg ?? -1, 72.35, accuracy: 0.0001)
     }
 
+    func testSessionPairsHistoricalDumpByUserAndTimestamp() throws {
+        var session = BS444Session(epochMode: .unix)
+        let weights = (0..<30).map { index in
+            weightPacket(
+                weightRaw: UInt16(7_000 + index),
+                timestamp: UInt32(1_699_999_900 + index),
+                userID: 1
+            )
+        }
+
+        for weight in weights {
+            XCTAssertTrue(try session.receiveWeight(weight, now: now).isEmpty)
+        }
+
+        var measurements: [BodyMeasurement] = []
+        for index in (0..<30).reversed() {
+            measurements += try session.receiveFeature(
+                featurePacket(
+                    fat: Double(200 + index) / 10,
+                    water: 55,
+                    muscle: 40,
+                    bone: 3,
+                    timestamp: UInt32(1_699_999_900 + index),
+                    userID: 1
+                ),
+                now: now
+            )
+        }
+
+        XCTAssertEqual(measurements.count, 30)
+        XCTAssertEqual(Set(measurements.compactMap(\.rawTimestamp)).count, 30)
+        XCTAssertTrue(measurements.allSatisfy { $0.scaleUserID == 1 })
+    }
+
+    func testSessionDoesNotCrossPairDifferentTimestamps() throws {
+        var session = BS444Session(epochMode: .unix)
+        let weight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_000, userID: 1)
+        let wrongFeature = featurePacket(
+            fat: 23.4,
+            water: 55.6,
+            muscle: 40.2,
+            bone: 3.1,
+            timestamp: 1_699_999_999,
+            userID: 1
+        )
+
+        XCTAssertTrue(try session.receiveWeight(weight, now: now).isEmpty)
+        XCTAssertTrue(try session.receiveFeature(wrongFeature, now: now).isEmpty)
+    }
+
     func testTimestampDecoderCorrectsLegacyEpoch() {
         var decoder = BS444TimestampDecoder(mode: .unix)
         let legacyRaw = UInt32(1_700_000_000 - Int64(BS444Protocol.scaleEpochOffset))
@@ -269,6 +332,28 @@ final class BS444ParserTests: XCTestCase {
         XCTAssertEqual(result.mode, .from2010)
         XCTAssertEqual(result.date, now)
         XCTAssertEqual(decoder.mode, .from2010)
+    }
+
+    func testTimestampDecoderDetectsOldHistoryByPlausibleEpoch() {
+        var decoder = BS444TimestampDecoder()
+        let oldDate = Date(timeIntervalSince1970: 1_500_000_000)
+        let raw = UInt32(oldDate.timeIntervalSince1970 - TimeInterval(BS444Protocol.scaleEpochOffset))
+        let result = decoder.decode(raw: raw, now: now)
+
+        XCTAssertEqual(result.mode, .from2010)
+        XCTAssertEqual(result.date, oldDate)
+    }
+
+    func testSessionRejectsZeroTimestamp() throws {
+        var session = BS444Session(epochMode: .from2010)
+        XCTAssertTrue(try session.receiveWeight(
+            weightPacket(weightRaw: 7_234, timestamp: 0, userID: 1),
+            now: now
+        ).isEmpty)
+        XCTAssertTrue(try session.receiveFeature(
+            featurePacket(fat: 23.4, water: 55.6, muscle: 40.2, bone: 3.1, timestamp: 0, userID: 1),
+            now: now
+        ).isEmpty)
     }
 
     private func weightPacket(
@@ -295,9 +380,14 @@ final class BS444ParserTests: XCTestCase {
         muscle: Double,
         bone: Double,
         highBits: UInt16 = 0,
+        timestamp: UInt32 = 1_700_000_000,
         userID: UInt8? = nil
     ) -> Data {
         var bytes = [UInt8](repeating: 0, count: BS444Protocol.featureFrameLength)
+        bytes[1] = UInt8(truncatingIfNeeded: timestamp)
+        bytes[2] = UInt8(truncatingIfNeeded: timestamp >> 8)
+        bytes[3] = UInt8(truncatingIfNeeded: timestamp >> 16)
+        bytes[4] = UInt8(truncatingIfNeeded: timestamp >> 24)
         bytes[5] = userID ?? 0xFF
         put(UInt16(fat * 10) | highBits, in: &bytes, offset: 8)
         put(UInt16(water * 10) | highBits, in: &bytes, offset: 10)

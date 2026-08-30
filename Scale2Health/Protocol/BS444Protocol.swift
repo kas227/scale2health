@@ -1,3 +1,8 @@
+// Portions of the BS44x protocol implementation are adapted from openScale's
+// MedisanaBs44xHandler, Copyright (C) 2025 olie.xdev, licensed GPL-3.0-or-later.
+// Modified for Scale2Health in 2026 and distributed under GPL-3.0-only.
+// See LICENSE and THIRD_PARTY_NOTICES.md.
+
 import Foundation
 
 public enum BS444EpochMode: String, Codable, Equatable, Sendable {

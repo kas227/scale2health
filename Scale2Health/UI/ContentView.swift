@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var isReceivedHistoryExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -70,6 +71,27 @@ struct ContentView: View {
                     }
                 }
 
+                if !model.bluetooth.receivedMeasurements.isEmpty {
+                    Section {
+                        DisclosureGroup(
+                            "\(model.bluetooth.receivedMeasurements.count) received measurements",
+                            isExpanded: $isReceivedHistoryExpanded
+                        ) {
+                            ForEach(Array(model.bluetooth.receivedMeasurements.enumerated()), id: \.offset) { _, measurement in
+                                MeasurementView(measurement: measurement)
+                            }
+                            Button("Clear received history", role: .destructive) {
+                                model.bluetooth.clearReceivedMeasurements()
+                                isReceivedHistoryExpanded = false
+                            }
+                        }
+                    } header: {
+                        Text("Received history")
+                    } footer: {
+                        Text("Decoded during this app run. Replayed records remain visible here even when Apple Health skips them as duplicates.")
+                    }
+                }
+
                 Section("Apple Health") {
                     if HealthKitManager.writesEnabled {
                         Label(model.healthKit.authorizationState.title, systemImage: "heart.text.square")
@@ -116,6 +138,15 @@ struct ContentView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+                }
+
+                Section("Legal") {
+                    NavigationLink("Open source licenses") {
+                        LegalNoticesView()
+                    }
+                    Text("Scale2Health is GPLv3 software. Its BS44x protocol implementation is adapted from openScale.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Raw BLE log") {
@@ -171,6 +202,31 @@ struct ContentView: View {
         case .failed: return "exclamationmark.triangle"
         case .notDetermined: return "bell"
         }
+    }
+}
+
+private struct LegalNoticesView: View {
+    private let notices: String = {
+        let resources = [
+            ("THIRD_PARTY_NOTICES", "md"),
+            ("LICENSE", nil)
+        ]
+        return resources.compactMap { name, extensionName in
+            guard let url = Bundle.main.url(forResource: name, withExtension: extensionName) else { return nil }
+            return try? String(contentsOf: url, encoding: .utf8)
+        }.joined(separator: "\n\n")
+    }()
+
+    var body: some View {
+        ScrollView {
+            Text(notices.isEmpty ? "License notices are unavailable." : notices)
+                .font(.caption.monospaced())
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+        }
+        .navigationTitle("Licenses")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

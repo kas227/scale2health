@@ -28,6 +28,8 @@
 		A10000010000000000000021 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* ModelTests.swift */; };
 		A10000010000000000000022 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000010000000000000005 /* XCTest.framework */; };
 		A10000010000000000000030 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* Assets.xcassets */; };
+		A10000010000000000000031 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* LICENSE */; };
+		A10000010000000000000032 /* THIRD_PARTY_NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* THIRD_PARTY_NOTICES.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +60,8 @@
 		A2000001000000000000000F /* LocalNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000020 /* BS444ParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BS444ParserTests.swift; sourceTree = "<group>"; };
 		A20000010000000000000021 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
+		A20000010000000000000030 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		A20000010000000000000031 /* THIRD_PARTY_NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY_NOTICES.md; sourceTree = "<group>"; };
 		A30000010000000000000001 /* CoreBluetooth.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBluetooth.framework; path = System/Library/Frameworks/CoreBluetooth.framework; sourceTree = SDKROOT; };
 		A30000010000000000000002 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		A30000010000000000000003 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -97,6 +101,8 @@
 			children = (
 				A60000010000000000000002 /* Scale2Health */,
 				A60000010000000000000007 /* Scale2HealthTests */,
+				A20000010000000000000030 /* LICENSE */,
+				A20000010000000000000031 /* THIRD_PARTY_NOTICES.md */,
 				A60000010000000000000008 /* Products */,
 				A60000010000000000000009 /* Frameworks */,
 			);
@@ -276,6 +282,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000010000000000000030 /* Assets.xcassets in Resources */,
+				A10000010000000000000031 /* LICENSE in Resources */,
+				A10000010000000000000032 /* THIRD_PARTY_NOTICES.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

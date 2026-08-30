@@ -105,11 +105,20 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
-    func save(_ measurement: BodyMeasurement) async throws -> Bool {
+    func save(
+        _ measurement: BodyMeasurement,
+        sourceDeviceIdentifier: String? = nil
+    ) async throws -> Bool {
         guard Self.writesEnabled else { return false }
         guard HKHealthStore.isHealthDataAvailable() else { throw HealthKitError.unavailable }
-        let fingerprint = deduplicator.fingerprint(for: measurement)
-        guard !deduplicator.contains(measurement), !inFlightFingerprints.contains(fingerprint) else {
+        let fingerprint = deduplicator.fingerprint(
+            for: measurement,
+            sourceDeviceIdentifier: sourceDeviceIdentifier
+        )
+        guard !deduplicator.contains(
+            measurement,
+            sourceDeviceIdentifier: sourceDeviceIdentifier
+        ), !inFlightFingerprints.contains(fingerprint) else {
             return false
         }
         inFlightFingerprints.insert(fingerprint)
@@ -147,7 +156,10 @@ final class HealthKitManager: ObservableObject {
 
         do {
             try await save(samples)
-            deduplicator.remember(measurement)
+            deduplicator.remember(
+                measurement,
+                sourceDeviceIdentifier: sourceDeviceIdentifier
+            )
             return true
         } catch {
             throw HealthKitError.saveFailed(error)

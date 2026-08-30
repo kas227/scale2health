@@ -49,9 +49,14 @@ func featurePacket(
     water: UInt16,
     muscle: UInt16,
     bone: UInt16,
+    timestamp: UInt32 = 1_700_000_000,
     userID: UInt8? = nil
 ) -> Data {
     var bytes = [UInt8](repeating: 0, count: BS444Protocol.featureFrameLength)
+    bytes[1] = UInt8(truncatingIfNeeded: timestamp)
+    bytes[2] = UInt8(truncatingIfNeeded: timestamp >> 8)
+    bytes[3] = UInt8(truncatingIfNeeded: timestamp >> 16)
+    bytes[4] = UInt8(truncatingIfNeeded: timestamp >> 24)
     bytes[5] = userID ?? 0xFF
     for (offset, value) in [(8, fat), (10, water), (12, muscle), (14, bone)] {
         bytes[offset] = UInt8(truncatingIfNeeded: value)
@@ -121,7 +126,7 @@ check(mismatchedUserMeasurement.isEmpty, "mismatched scale users are not combine
 var liveSession = BS444Session(epochMode: .unix)
 let transientWeight = weightPacket(weightRaw: 1_100, timestamp: 1_700_000_000)
 let finalWeight = weightPacket(weightRaw: 7_234, timestamp: 1_700_000_001)
-let liveFeature = featurePacket(fat: 234, water: 556, muscle: 402, bone: 31)
+let liveFeature = featurePacket(fat: 234, water: 556, muscle: 402, bone: 31, timestamp: 1_700_000_001)
 let transientResult = try liveSession.receiveWeight(transientWeight, now: now)
 check(transientResult.isEmpty, "transient weight waits for features")
 let finalResult = try liveSession.receiveWeight(finalWeight, now: now)
