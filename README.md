@@ -51,12 +51,12 @@ The BS444 path has been tested on real hardware. Related BS44x models are recogn
 ## Build and install
 
 1. Clone the repository and open `Scale2Health.xcodeproj`.
-2. Select the **Scale2Health** target, open **Signing & Capabilities**, and choose your development team.
+2. Copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and replace `YOUR_TEAM_ID` with your Apple development team ID. This local file is ignored by Git and applies to both Debug and Release, including the test target.
 3. Change the bundle identifier if `com.scale2health.app` is unavailable to your team.
 4. Connect and select your iPhone, then run the app from Xcode.
 5. Grant Bluetooth, Health, and optional notification permissions when prompted.
 
-The project intentionally does not include a development-team ID, provisioning profile, certificate, or other signing material.
+The tracked project intentionally does not include a development-team ID, provisioning profile, certificate, or other signing material. Keep personal signing settings in `Config/Local.xcconfig`, not the Xcode project file; selecting a team in **Signing & Capabilities** may write it back into the tracked project. Certificates and private keys stay in Keychain. The local configuration is optional for unsigned or simulator builds.
 
 ## Tests
 
