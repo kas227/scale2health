@@ -1,0 +1,2 @@
+// Shared signing configuration. Personal settings stay in the ignored file.
+#include? "Local.xcconfig"
