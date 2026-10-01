@@ -5,3 +5,6 @@ build/
 .swiftpm/
 *.xcuserstate
 xcuserdata/
+
+# Personal Apple signing settings
+/Config/Local.xcconfig
